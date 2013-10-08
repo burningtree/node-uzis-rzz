@@ -143,6 +143,5 @@ fetch indexUrl, ($) =>
     kraj = $(item).attr('value')
     url = listUrl.replace '@KRAJ@', encodeURIString(kraj)
 
-    if i == 0
-      q.push { kraj: kraj, url: url }
+    q.push { kraj: kraj, url: url }
 

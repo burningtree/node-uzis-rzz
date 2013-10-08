@@ -1,7 +1,2 @@
 #!/bin/sh
-
-if [ ! -f "uzis-rzz.js" ]; then
-  node_modules/coffee-script/bin/coffee uzis-rzz.coffee
-else
-  node uzis-rzz.js
-fi;
+node uzis-rzz.js
