@@ -1,5 +1,7 @@
 node_modules
-*.swp
 uzis-rzz.js
+*.swp
 cache
-data.*
+uzis-rzz-*.csv
+uzis-rzz-*.json
+uzis-rzz-*.zip

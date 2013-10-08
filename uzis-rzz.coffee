@@ -5,7 +5,6 @@ async = require 'async'
 $ = require 'cheerio'
 crypto = require 'crypto'
 fs = require 'fs'
-jsoncsv = require 'jsoncsv'
 
 output = []
 krajOutput = {}

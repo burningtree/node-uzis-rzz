@@ -5,8 +5,11 @@ all:
 	./uzis-rzz
 	make zip
 
+install:
+	mkdir cache
+
 clean:
-	rm *.csv; rm *.json; rm *.zip
+	rm uzis-rzz-*.csv; rm uzis-rzz-*.json; rm uzis-rzz-*.zip
 
 zip:
 	# zip last results

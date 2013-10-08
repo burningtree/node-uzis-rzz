@@ -1,0 +1,28 @@
+{
+  "name": "node-uzis-rzz",
+  "version": "0.1.0",
+  "description": "",
+  "main": "uzis-rzz.js",
+  "dependencies": {
+    "request": "~2.27.0",
+    "async": "~0.2.9",
+    "cheerio": "~0.12.3",
+    "iconv-lite": "~0.2.11"
+  },
+  "devDependencies": {
+    "coffee-script": "~1.6.3"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublish": "coffee --bare --compile --output ./ *.coffee"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/burningtree/node-uzis-rzz.git"
+  },
+  "author": "Jan Stransky <jan.stransky@arnal.cz>",
+  "license": "BSD-2-Clause",
+  "bugs": {
+    "url": "https://github.com/burningtree/node-uzis-rzz/issues"
+  }
+}
