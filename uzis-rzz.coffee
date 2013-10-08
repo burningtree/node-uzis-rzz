@@ -100,7 +100,8 @@ processDetail = (task, callback) =>
     if task.i % 50 == 0
       totalSize = Object.keys(output).length
       qSize = q2.length()
-      console.log "\nStav: "+parseFloat(100-(qSize/(totalSize/100))).toFixed(2)+"%  zbyva: "+qSize+"/"+totalSize
+      percStatus = parseFloat(100-(qSize/(totalSize/100))).toFixed(2)
+      console.log "\nStav: "+percStatus+"%  zbyva: "+qSize+"/"+totalSize
 
     setImmediate => callback()
 
