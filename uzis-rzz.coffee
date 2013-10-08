@@ -6,14 +6,17 @@ $ = require 'cheerio'
 crypto = require 'crypto'
 fs = require 'fs'
 
-output = []
+output = {}
 krajOutput = {}
 krajCount = {}
 
 concurrency = 1
+concurrency2 = 50
 
-indexUrl = 'https://snzr.uzis.cz/viewzz/RZZHledat1.htm'
-listUrl = 'https://snzr.uzis.cz/viewzz/lb/RZZSeznam.pl?KRAJ=@KRAJ@&ORP=V%8AE&OBEC=V%8AE&TYP=V%8AE&DRZAR=V%8AE&OBOR=V%8AE&ZRIZOVATEL=V%8AE&NAZEV=V%8AE&Hledat=Hledat&WAIT_PAGE=ON'
+config =
+  index: 'https://snzr.uzis.cz/viewzz/RZZHledat1.htm'
+  list: 'https://snzr.uzis.cz/viewzz/lb/RZZSeznam.pl?KRAJ={kraj}&WAIT_PAGE=ON'
+  detail: 'https://snzr.uzis.cz/viewzz/lb/RZZDetail.pl?{id}=Detail&WAIT_PAGE=ON'
 
 sha1 = (str) =>
   crypto.createHash('sha1').update(str).digest('hex')
@@ -74,6 +77,33 @@ processLine = (data, meta, long=false) =>
       krajOutput[meta.kraj].push pre
       #console.log pre
 
+processDetail = (task, callback) =>
+
+  map =
+    'Číslo faxu': 'fax'
+    'IČ': 'ic'
+    'Pořadové číslo zařízení': 'porCisloZarizeni'
+    'Poř. číslo detašovaného pracoviště': 'porCisloDetasPracoviste'
+    'Název zřizovatele ZZ': 'zrizovatel'
+    'e-mail': 'email'
+    'Adresa WWW': 'www'
+
+  url = config.detail.replace '{id}', task.id
+  fetch url, ($) =>
+
+    $('table[width="100%"] > tr:nth-child(6) table > tr').each (i, item) =>
+      colname = trim($('td:nth-child(1)', $(item)).text())
+      if map[colname]
+        output[task.id][map[colname]] = trim($('td:nth-child(2)', $(item)).text())
+
+    process.stdout.write '.'
+    if task.i % 50 == 0
+      totalSize = Object.keys(output).length
+      qSize = q2.length()
+      console.log "\nStav: "+parseFloat(100-(qSize/(totalSize/100))).toFixed(2)+"%  zbyva: "+qSize+"/"+totalSize
+
+    setImmediate => callback()
+
 processKraj = (task, callback) =>
   console.log 'Spoustim zpracovani `'+task.kraj+'` .. '
   #console.log task.url
@@ -103,18 +133,24 @@ processKraj = (task, callback) =>
       console.log 'Nesedi pocet zaznamu!! parsovano: '+krajOutput[task.kraj].length+' deklarovano: '+krajCount[task.kraj]
       process.exit(1)
 
-    output = output.concat krajOutput[task.kraj]
-    console.log 'Kraj `'+task.kraj+'` hotovy. Pridano '+krajOutput[task.kraj].length+' zaznamu. Celkem zaznamu: '+output.length
+    for i,item of krajOutput[task.kraj]
+      output[item.id] = item
+
+    console.log 'Kraj `'+task.kraj+'` hotovy. Pridano '+krajOutput[task.kraj].length+' zaznamu. Celkem zaznamu: '+Object.keys(output).length
     callback()
 
-q = async.queue processKraj, concurrency
-q.drain = =>
+updateInfo = =>
+  console.log 'Spoustim zpracovani detailu ..'
+  oi = 0
+  for id,item of output
+    q2.push { i: oi, id: id }
+    oi += 1
 
+finalize = =>
   # mame hotovo, vygenerujeme soubory
   fnBase = 'uzis-rzz-'+new Date().toISOString().replace(/:\d+\.\d+Z$/, '').replace(':','')
   fn = csv: fnBase+'.csv', json: fnBase+'.json'
 
-  console.log 'Parsovani hotovo.'
   console.log 'Generuji soubor `'+fn.json+'` ..'
   fs.writeFileSync fn.json, JSON.stringify(output)
 
@@ -125,23 +161,32 @@ q.drain = =>
   for oi, item of output
     line = []
     for ci, c of cols
-      line.push '"'+item[c].replace('"', '\\"')+'"'
+      line.push '"'+item[c].replace(/"/g, '\"\"')+'"'
 
     csvOutput = csvOutput + line.join(',') + "\n"
 
   fs.writeFileSync fn.csv, csvOutput
-
   console.log 'Hotovo.'
+  
+q = async.queue processKraj, concurrency
+q.drain = =>
+  console.log 'List queue hotovo.'
+  updateInfo()
+  
+q2 = async.queue processDetail, concurrency2
+q2.drain = =>
+  console.log 'Detail queue hotovo.'
+  finalize()
 
 # -------------------
 # START
 # -------------------
 
 console.log 'Stahuji index ..'
-fetch indexUrl, ($) =>
+fetch config.index, ($) =>
   $('select#kraj option').each (i, item) =>
     kraj = $(item).attr('value')
-    url = listUrl.replace '@KRAJ@', encodeURIString(kraj)
+    url = config.list.replace '{kraj}', encodeURIString(kraj)
 
     q.push { kraj: kraj, url: url }
 

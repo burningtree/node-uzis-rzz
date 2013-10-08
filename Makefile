@@ -1,5 +1,5 @@
 
-output=$(shell ls -tr *.csv | awk 'NR==1{print $1}')
+output=$(shell ls -t *.csv | awk 'NR==1{print $1}')
 
 all:
 	npm run prepublish
